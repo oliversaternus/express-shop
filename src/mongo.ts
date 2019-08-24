@@ -216,3 +216,103 @@ export async function addAsset(domain: string, asset: models.IAsset): Promise<bo
         return false;
     }
 }
+
+/*####################################### CUSTOMERS ###################################### */
+
+export async function createCustomer(customer: models.ICustomer): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("customers").insertOne(customer);
+        return !!res.insertedCount;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function deleteCustomer(__id: string): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("customers").deleteOne({ __id });
+        return !!res.deletedCount;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function updateCustomer(customer: models.ICustomer): Promise<boolean> {
+    let updateParams = { ...customer };
+    delete updateParams.sessionTokens;
+    try {
+        const res = await conn.db("express-shop").collection("customers").updateOne({ __id: customer.__id }, { ...customer });
+        return !!res.result.nModified;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function logoutCustomer(__id: string): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("customers").updateOne({ __id }, { sessionTokens: [] });
+        return !!res.result.nModified;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function addCustomerSessionToken(__id: string, token: string): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("customers").updateOne({ __id }, { $push: { sessionTokens: token } });
+        return !!res.result.nModified;
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function removeCustomerSessionToken(__id: string, token: string): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("customers").updateOne({ __id }, { $pull: { sessionTokens: token } });
+        return !!res.result.nModified;
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function getCustomers(): Promise<models.ICustomer[]> {
+    try {
+        const res = await conn.db("express-shop").collection("customers").find({}, { projection: { password: 0, sessionTokens: 0, cart: 0, purchased: 0 } }).toArray();
+        return res as models.ICustomer[];
+
+    } catch (e) {
+        return null;
+    }
+}
+
+export async function getCustomer(__id: string): Promise<models.ICustomer> {
+    try {
+        const res = await conn.db("express-shop").collection("customers").findOne({ __id }, { projection: { password: 0 } });
+        return res as models.ICustomer;
+
+    } catch (e) {
+        return null;
+    }
+}
+
+export async function addToCart(__id: string, product: models.IProduct) {
+    try {
+        const res = await conn.db("express-shop").collection("customers").updateOne({ __id }, { $push: { cart: product } });
+        return !!res.result.nModified;
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function removeFromCart(__id: string, cartId: string) {
+    try {
+        const res = await conn.db("express-shop").collection("customers").updateOne({ __id }, { $pull: { cart: { cartId } } });
+        return !!res.result.nModified;
+    } catch (e) {
+        return false;
+    }
+}
