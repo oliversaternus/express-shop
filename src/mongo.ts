@@ -125,10 +125,10 @@ export async function getCustomers(): Promise<models.ICustomer[]> {
     }
 }
 
-export async function getCustomer(__id: string): Promise<models.ICustomer> {
+export async function getCustomer(email: string): Promise<models.ICustomer> {
     try {
         const res = await conn.db("express-shop").collection("customers")
-            .findOne({ __id }, { projection: { password: 0 } });
+            .findOne({ email }, { projection: { password: 0 } });
         return res as models.ICustomer;
 
     } catch (e) {

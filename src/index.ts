@@ -21,42 +21,35 @@ app.get("/", (req, res) => {
 });
 
 // login with username and password
-app.post("/api/login", async (req, res) => {
+app.post("/api/customers/login", async (req, res) => {
     try {
-        const user: string = req.body.user;
+        const email: string = req.body.email;
         const password: string = req.body.password;
-        const userData: models.IUser = await mongo.getUserById(user);
+        const hash: string = utils.hash(password);
+        let customer: models.ICustomer = await mongo.getCustomer(email);
 
         // Check permission
-        if (!userData || password !== userData.password) {
+        if (!customer || hash !== customer.password) {
             res.sendStatus(401);
             return;
         }
 
         // Generate tokens
-        const key: string = randomString(32);
-        const refreshToken: string = crypt.encrypt(JSON.stringify({
-            exp: (Date.now() + 604800000),
-            id: userData.id,
-            key
-        }));
-        const token: string = crypt.encrypt(JSON.stringify({
-            exp: (Date.now() + 1200000),
-            id: userData.id,
-            sec: secret
-        }));
+        const key: string = utils.randomString(32);
+        const refreshToken: string = utils.createUserRefreshToken(customer.__id, key);
+        const token: string = utils.createUserToken(customer.__id);
+
+        // Craft response data
+        delete customer.password;
+        delete customer.sessionTokens;
         const response = {
             refreshToken,
             token,
-            user: {
-                firstName: userData.firstName,
-                id: userData.id,
-                lastName: userData.lastName
-            }
+            customer
         };
 
         // Save and return
-        const success: boolean = await mongo.addUserTokenById(userData.id, key);
+        const success: boolean = await mongo.addCustomerSessionToken(customer.__id, key);
         if (!success) {
             res.sendStatus(500);
             return;
@@ -71,7 +64,7 @@ app.post("/api/login", async (req, res) => {
 });
 
 // login with refresh-token
-app.post("/api/loginwt", async (req, res) => {
+app.post("/api/customers/refresh", async (req, res) => {
     try {
         const refreshToken: string = req.body.refreshToken;
 
@@ -113,98 +106,11 @@ app.post("/api/loginwt", async (req, res) => {
 });
 
 // verify token
-app.get("/api/verify", async (req, res) => {
+app.get("/api/customers/verify", async (req, res) => {
     try {
         const success = verifyToken(req.get("token"));
         if (!success) {
             res.sendStatus(401);
-            return;
-        }
-        res.sendStatus(200);
-
-    } catch (e) {
-        // tslint:disable-next-line:no-console
-        console.log(e);
-        res.sendStatus(500);
-    }
-});
-
-// get user's subdomains
-app.get("/api/domains", async (req, res) => {
-    try {
-        const user = verifyToken(req.get("token"));
-        if (!user) {
-            res.sendStatus(401);
-            return;
-        }
-        const domains: models.IDomain[] = await mongo.getDomainsByUser(user);
-        res.status(200).send(domains);
-
-    } catch (e) {
-        // tslint:disable-next-line:no-console
-        console.log(e);
-        res.sendStatus(500);
-    }
-});
-
-// create new subdomain
-app.post("/api/domains/:domain", async (req, res) => {
-    try {
-        const user = verifyToken(req.get("token"));
-        if (!user) {
-            res.sendStatus(401);
-            return;
-        }
-        const domain: string = req.params.domain;
-        const pageData: models.IPage = req.body;
-        const occupied: boolean = await mongo.checkDomain(domain);
-        if (occupied || reservedDomains.includes(domain)) {
-            res.sendStatus(400);
-            return;
-        }
-        const inserted = await mongo.insertDomain(domain, user, pageData);
-        const created = await utils.create(domain);
-        if (!inserted || !created) {
-            res.sendStatus(500);
-            return;
-        }
-        res.sendStatus(200);
-
-    } catch (e) {
-        // tslint:disable-next-line:no-console
-        console.log(e);
-        res.sendStatus(500);
-    }
-});
-
-// Create or update page
-app.post("/api/pages/:domain", async (req, res) => {
-    try {
-        const user = verifyToken(req.get("token"));
-        if (!user) {
-            res.sendStatus(401);
-            return;
-        }
-        const domain: string = req.params.domain;
-        const pageData: models.IPage = req.body;
-        const domainData: models.IDomain = await mongo.getDomain(domain);
-        const pageIndex = domainData.pages.findIndex((el) => el.name === pageData.name);
-
-        // Check permission
-        if (!domainData || domainData.owner !== user) {
-            res.sendStatus(400);
-            return;
-        }
-
-        // Persist
-        const saved = pageIndex === -1 ?
-            await mongo.addPage(domain, pageData) :
-            await mongo.updatePage(domain, pageData);
-
-        // Build
-        const built: boolean = await utils.build(domain, pageData.name);
-        if (!built) {
-            res.sendStatus(500);
             return;
         }
         res.sendStatus(200);
