@@ -58,8 +58,21 @@ export interface IAdmin {
 	sessionTokens: string[];
 }
 
-export interface IProduct {
+export interface IProduct{
+    __id: string;
+	name: string;
+	description_short: string;
+	description_long: string;
+	amount: number;
+	price: number;
+	images: string[];
+	mainImage: string;
+	categories: any;
+}
+
+export interface IPendingCustomer {
     __id: string;
 	email: string;
-	token: string;
+    token: string;
+    date: number;
 }

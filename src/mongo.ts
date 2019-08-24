@@ -12,212 +12,40 @@ export async function prepare(): Promise<boolean> {
     }
 }
 
-/*#############################  USERS  ##################################*/
-
-export async function insertUser(user: models.IUser): Promise<boolean> {
+export async function initialize(): Promise<boolean> {
     try {
-        const res = await conn.db("blogscape").collection("users").insertOne(user);
-        return !!res.insertedCount;
+        conn = await MongoClient.connect(url, { useNewUrlParser: true });
 
-    } catch (e) {
-        return false;
-    }
-}
+        // drop all collections
+        await conn.db("express-shop").collection("customers").drop();
+        await conn.db("express-shop").collection("products").drop();
+        await conn.db("express-shop").collection("admins").drop();
+        await conn.db("express-shop").collection("pending_customers").drop();
 
-export async function updateUserPasswordById(id: string, password: string): Promise<boolean> {
-    if (!password) {
-        return false;
-    }
-    try {
-        const res = await conn.db("blogscape").collection("users").updateOne({ id }, { $set: { password } });
-        return !!res.result.nModified;
+        // create collections
+        await conn.db("express-shop").createCollection("customers");
+        await conn.db("express-shop").createCollection("products");
+        await conn.db("express-shop").createCollection("admins");
+        await conn.db("express-shop").createCollection("pending_customers");
 
-    } catch (e) {
-        return false;
-    }
-}
-
-export async function addUserTokenById(id: string, token: string): Promise<boolean> {
-    try {
-        const res = await conn.db("blogscape").collection("users").updateOne({ id }, { $push: { refresh: token } });
-        return !!res.result.nModified;
-    } catch (e) {
-        return false;
-    }
-}
-
-export async function removeUserTokenById(id: string, token: string): Promise<boolean> {
-    try {
-        const res = await conn.db("blogscape").collection("users").updateOne({ id }, { $pull: { refresh: token } });
-        return !!res.result.nModified;
-    } catch (e) {
-        return false;
-    }
-}
-
-export async function getAllUsers(): Promise<models.IUser[]> {
-    try {
-        const res = await conn.db("blogscape").collection("users").find({}, { projection: { _id: 0 } }).toArray();
-        return res as models.IUser[];
-
-    } catch (e) {
-        return null;
-    }
-}
-
-export async function getUserById(id: string): Promise<models.IUser> {
-    try {
-        const res = await conn.db("blogscape").collection("users").findOne({ id }, { projection: { _id: 0 } });
-        return res as models.IUser;
-
-    } catch (e) {
-        return null;
-    }
-}
-
-export async function removeUserById(id: string): Promise<boolean> {
-    try {
-        const res = await conn.db("blogscape").collection("users").deleteOne({ id });
-        return !!res.deletedCount;
-
-    } catch (e) {
-        return false;
-    }
-}
-
-/*############################  DOMAINS  ##############################*/
-
-export async function checkDomain(id: string): Promise<boolean> {
-    try {
-        const res = await conn.db("blogscape").collection("domains").findOne({ id });
+        // create index
+        const res = await conn.db("express-shop").collection("pending_customers")
+            .createIndex({ date: 1 }, { expireAfterSeconds: 1200 });
         return !!res;
-
     } catch (e) {
         return false;
     }
 }
 
-export async function getDomain(id: string): Promise<models.IDomain> {
-    try {
-        const res = await conn.db("blogscape").collection("domains").findOne({ id });
-        return res as models.IDomain;
-
-    } catch (e) {
-        return null;
-    }
-}
-
-export async function getDomainsByUser(user: string): Promise<models.IDomain[]> {
-    try {
-        const res = await conn.db("blogscape").collection("domains").find({ owner: user }).toArray();
-        return res as models.IDomain[];
-
-    } catch (e) {
-        return null;
-    }
-}
-
-export async function insertDomain(id: string, owner: string, page: models.IPage): Promise<boolean> {
-    try {
-        const initPage: models.IPage = {
-            data: page.data,
-            metaData: page.metaData,
-            name: "index",
-            template: page.template
-        };
-        const initialDomain: models.IDomain = {
-            assets: [],
-            id,
-            owner,
-            pages: [initPage]
-        };
-        const res = await conn.db("blogscape").collection("domains").insertOne(initialDomain);
-        return !!res.insertedCount;
-
-    } catch (e) {
-        return false;
-    }
-}
-
-/*############################  PAGES  ##############################*/
-
-export async function getPage(domain: string, page: string): Promise<models.IPage> {
-    try {
-        const res = await conn.db("blogscape").collection("domains").findOne({ id: domain });
-        if (!res) {
-            return null;
-        }
-        const resP = res.pages.find((el: any) => el.name === page);
-        if (!resP) {
-            return null;
-        }
-        return resP as models.IPage;
-    } catch (e) {
-        return null;
-    }
-}
-
-export async function updatePage(domain: string, page: models.IPage): Promise<boolean> {
-    try {
-        const res = await conn.db("blogscape").collection("domains").updateOne(
-            {
-                "id": domain,
-                "pages.name": page.name
-            },
-            {
-                $set: {
-                    "pages.$": page
-                }
-            }
-        );
-
-        return !!res.result.nModified;
-    } catch (e) {
-        return false;
-    }
-}
-
-export async function addPage(domain: string, page: models.IPage): Promise<boolean> {
-    try {
-        const res = await conn.db("blogscape").collection("domains").updateOne(
-            {
-                id: domain
-            },
-            {
-                $push: {
-                    pages: page
-                }
-            }
-        );
-
-        return !!res.result.nModified;
-    } catch (e) {
-        return false;
-    }
-}
-
-/*############################  ASSETS  ##############################*/
-
-export async function addAsset(domain: string, asset: models.IAsset): Promise<boolean> {
-    try {
-        const res = await conn.db("blogscape").collection("domains").updateOne(
-            {
-                id: domain
-            },
-            {
-                $push: {
-                    assets: asset
-                }
-            }
-        );
-
-        return !!res.result.nModified;
-    } catch (e) {
-        return false;
-    }
-}
-
-/*####################################### CUSTOMERS ###################################### */
+/*
+*
+*
+*
+************************************ CUSTOMERS **************************************
+*
+*
+*
+*/
 
 export async function createCustomer(customer: models.ICustomer): Promise<boolean> {
     try {
@@ -343,5 +171,189 @@ export async function purchase(__id: string) {
         return !!res.result.nModified;
     } catch (e) {
         return false;
+    }
+}
+
+/*
+*
+*
+*
+************************************ PRODUCTS **************************************
+*
+*
+*
+*/
+
+export async function createProduct(product: models.IProduct): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("products")
+            .insertOne(product);
+        return !!res.insertedCount;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function deleteProduct(__id: string): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("products")
+            .deleteOne({ __id });
+        return !!res.deletedCount;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function updateProduct(product: models.IProduct): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("products")
+            .updateOne({ __id: product.__id }, { ...product });
+        return !!res.result.nModified;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function getProducts(catergories: any): Promise<models.IProduct[]> {
+    try {
+        const res = await conn.db("express-shop").collection("products")
+            .find({}).toArray();
+        return res as models.IProduct[];
+
+    } catch (e) {
+        return null;
+    }
+}
+
+export async function getProduct(__id: string): Promise<models.IProduct> {
+    try {
+        const res = await conn.db("express-shop").collection("products")
+            .findOne({ __id });
+        return res as models.IProduct;
+
+    } catch (e) {
+        return null;
+    }
+}
+
+/*
+*
+*
+*
+************************************ ADMINS **************************************
+*
+*
+*
+*/
+
+export async function createAdmin(admin: models.IAdmin): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("admins")
+            .insertOne(admin);
+        return !!res.insertedCount;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function deleteAdmin(__id: string): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("admins")
+            .deleteOne({ __id });
+        return !!res.deletedCount;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function updateAdmin(admin: models.IAdmin): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("admins")
+            .updateOne({ __id: admin.__id }, { ...admin });
+        return !!res.result.nModified;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function getAdmins(): Promise<models.IAdmin[]> {
+    try {
+        const res = await conn.db("express-shop").collection("admins")
+            .find({}).toArray();
+        return res as models.IAdmin[];
+
+    } catch (e) {
+        return null;
+    }
+}
+
+export async function getAdmin(__id: string): Promise<models.IAdmin> {
+    try {
+        const res = await conn.db("express-shop").collection("admins")
+            .findOne({ __id });
+        return res as models.IAdmin;
+
+    } catch (e) {
+        return null;
+    }
+}
+
+/*
+*
+*
+*
+************************************ PENDING CUSTOMERS **************************************
+*
+*
+*
+*/
+
+export async function createPendingCustomer(customer: models.IPendingCustomer): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("pending_customers")
+            .insertOne(customer);
+        return !!res.insertedCount;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function deletePendingCustomer(__id: string): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("pending_customers")
+            .deleteOne({ __id });
+        return !!res.deletedCount;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function getPendingCustomers(): Promise<models.IPendingCustomer[]> {
+    try {
+        const res = await conn.db("express-shop").collection("pending_customers")
+            .find({}).toArray();
+        return res as models.IPendingCustomer[];
+
+    } catch (e) {
+        return null;
+    }
+}
+
+export async function getPendingCustomer(__id: string): Promise<models.IPendingCustomer> {
+    try {
+        const res = await conn.db("express-shop").collection("pending_customers")
+            .findOne({ __id });
+        return res as models.IPendingCustomer;
+
+    } catch (e) {
+        return null;
     }
 }
