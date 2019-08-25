@@ -28,7 +28,7 @@ export async function initialize(): Promise<boolean> {
         await conn.db("express-shop").createCollection("admins");
         await conn.db("express-shop").createCollection("pending_customers");
 
-        // create index
+        // create TTL index
         const res = await conn.db("express-shop").collection("pending_customers")
             .createIndex({ date: 1 }, { expireAfterSeconds: 1200 });
         return !!res;
