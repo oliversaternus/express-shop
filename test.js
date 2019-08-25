@@ -1,3 +1,8 @@
-const hashJS = require('hash.js');
-const data = 'dubadubadu';
-console.log(hashJS.sha256().update(data).digest('hex'));
+const mongo = require('./dist/mongo');
+
+async function run() {
+    await mongo.initialize();
+    console.log('initialized');
+}
+
+run();

@@ -19,7 +19,7 @@ app.get("/", (req, res) => {
     res.send("Hello world!");
 });
 
-// login with username and password
+// customer login with username and password
 app.post("/api/customers/login", async (req, res) => {
     try {
         const email: string = req.body.email;
@@ -56,13 +56,12 @@ app.post("/api/customers/login", async (req, res) => {
         res.status(200).send(response);
 
     } catch (e) {
-        // tslint:disable-next-line:no-console
         console.log(e);
         res.sendStatus(500);
     }
 });
 
-// login with refresh-token
+// customer login with refresh-token
 app.post("/api/customers/refresh", async (req, res) => {
     try {
         const refreshToken: string = req.body.token;
@@ -73,7 +72,7 @@ app.post("/api/customers/refresh", async (req, res) => {
         }
 
         // Check permission
-        const plainToken = JSON.parse(utils.decrypt(refreshToken));
+        const plainToken: any = utils.decrypt(refreshToken);
         const customer: models.ICustomer = await mongo.getCustomer(plainToken.email);
         if (!customer.sessionTokens.includes(plainToken.key)) {
             res.sendStatus(401);
@@ -92,7 +91,6 @@ app.post("/api/customers/refresh", async (req, res) => {
         res.status(200).send(response);
 
     } catch (e) {
-        // tslint:disable-next-line:no-console
         console.log(e);
         res.sendStatus(500);
     }
@@ -109,7 +107,6 @@ app.get("/api/customers/verify", async (req, res) => {
         res.sendStatus(200);
 
     } catch (e) {
-        // tslint:disable-next-line:no-console
         console.log(e);
         res.sendStatus(500);
     }
@@ -118,11 +115,14 @@ app.get("/api/customers/verify", async (req, res) => {
 // Upload product image
 app.put("/api/products/:id/images", async (req, res) => {
     try {
+        // verify credentials
         const user = utils.verifyToken(req.get("token"));
         if (!user) {
             res.sendStatus(401);
             return;
         }
+
+        // prepare data
         const id = req.params.id;
         const image = req.files.image;
         const name: string = req.body.name;
@@ -139,7 +139,6 @@ app.put("/api/products/:id/images", async (req, res) => {
         res.sendStatus(200);
 
     } catch (e) {
-        // tslint:disable-next-line:no-console
         console.log(e);
         res.sendStatus(500);
     }
@@ -147,7 +146,6 @@ app.put("/api/products/:id/images", async (req, res) => {
 
 mongo.prepare().then(async () => {
     app.listen(8080, () => {
-        // tslint:disable-next-line:no-console
         console.log(`server started at http://localhost:8080`);
     });
 });

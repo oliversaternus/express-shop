@@ -27,7 +27,7 @@ export function verifyToken(token: string): string {
     if (plainToken.sec !== secret) {
         return "";
     }
-    return plainToken.id;
+    return plainToken.email;
 }
 
 export function hash(data: string): string {
@@ -51,6 +51,6 @@ export function createUserRefreshToken(email: string, key: string) {
     }));
 }
 
-export function decrypt(text: string): string {
-    return crypt.decrypt(text);
+export function decrypt(text: string): any {
+    return JSON.parse(crypt.decrypt(text));
 }
