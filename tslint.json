@@ -5,7 +5,12 @@
     ],
     "jsRules": {},
     "rules": {
-        "trailing-comma": [ false ]
+        "trailing-comma": [
+            false
+        ],
+        "variable-name": [
+            false
+        ]
     },
     "rulesDirectory": []
 }

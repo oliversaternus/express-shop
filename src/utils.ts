@@ -1,5 +1,5 @@
+import * as hashJS from "hash.js";
 import * as crypt from "./crypt";
-import * as hashJS from 'hash.js';
 const secret: string = "wo4Bd8FktL31Ekv8sTbcl33";
 const alphabet: string = "4fPwKEjkGrBJst2MpFVZx9y5lIm6A7LDinQzgOhqaWC3obXuv0H1cNde8Y";
 
@@ -9,6 +9,14 @@ export function randomString(length: number): string {
         result += alphabet[Math.floor((Math.random() * 58))];
     }
     return result;
+}
+
+export function generateId(): string {
+    let result: string = "";
+    for (let i = 0; i < 12; i++) {
+        result += alphabet[Math.floor((Math.random() * 58))];
+    }
+    return result + Date.now();
 }
 
 export function verifyToken(token: string): string {
@@ -23,22 +31,26 @@ export function verifyToken(token: string): string {
 }
 
 export function hash(data: string): string {
-    const result = hashJS.sha256().update(data).digest('hex');
+    const result = hashJS.sha256().update(data).digest("hex");
     return result;
 }
 
-export function createUserToken(id: string) {
+export function createUserToken(email: string) {
     return crypt.encrypt(JSON.stringify({
+        email,
         exp: (Date.now() + 1200000),
-        id: id,
         sec: secret
     }));
 }
 
-export function createUserRefreshToken(id: string, key: string) {
+export function createUserRefreshToken(email: string, key: string) {
     return crypt.encrypt(JSON.stringify({
+        email,
         exp: (Date.now() + 604800000),
-        id,
         key
     }));
+}
+
+export function decrypt(text: string): string {
+    return crypt.decrypt(text);
 }

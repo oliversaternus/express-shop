@@ -70,7 +70,7 @@ export async function deleteCustomer(__id: string): Promise<boolean> {
 }
 
 export async function updateCustomer(customer: models.ICustomer): Promise<boolean> {
-    let updateParams = { ...customer };
+    const updateParams = { ...customer };
     delete updateParams.sessionTokens;
     delete updateParams.purchased;
     try {
@@ -210,6 +210,17 @@ export async function updateProduct(product: models.IProduct): Promise<boolean> 
     try {
         const res = await conn.db("express-shop").collection("products")
             .updateOne({ __id: product.__id }, { ...product });
+        return !!res.result.nModified;
+
+    } catch (e) {
+        return false;
+    }
+}
+
+export async function addProductImage(__id: string, image: string): Promise<boolean> {
+    try {
+        const res = await conn.db("express-shop").collection("products")
+            .updateOne({ __id }, { $push: { images: image } });
         return !!res.result.nModified;
 
     } catch (e) {

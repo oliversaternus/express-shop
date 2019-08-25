@@ -4,7 +4,6 @@ import express from "express";
 import fileUpload, { UploadedFile } from "express-fileupload";
 import path from "path";
 import util from "util";
-import * as crypt from "./crypt";
 import * as models from "./models";
 import * as mongo from "./mongo";
 import * as utils from "./utils";
@@ -26,7 +25,7 @@ app.post("/api/customers/login", async (req, res) => {
         const email: string = req.body.email;
         const password: string = req.body.password;
         const hash: string = utils.hash(password);
-        let customer: models.ICustomer = await mongo.getCustomer(email);
+        const customer: models.ICustomer = await mongo.getCustomer(email);
 
         // Check permission
         if (!customer || hash !== customer.password) {
@@ -36,16 +35,16 @@ app.post("/api/customers/login", async (req, res) => {
 
         // Generate tokens
         const key: string = utils.randomString(32);
-        const refreshToken: string = utils.createUserRefreshToken(customer.__id, key);
-        const token: string = utils.createUserToken(customer.__id);
+        const refreshToken: string = utils.createUserRefreshToken(customer.email, key);
+        const token: string = utils.createUserToken(customer.email);
 
         // Craft response data
         delete customer.password;
         delete customer.sessionTokens;
         const response = {
+            customer,
             refreshToken,
-            token,
-            customer
+            token
         };
 
         // Save and return
@@ -66,7 +65,7 @@ app.post("/api/customers/login", async (req, res) => {
 // login with refresh-token
 app.post("/api/customers/refresh", async (req, res) => {
     try {
-        const refreshToken: string = req.body.refreshToken;
+        const refreshToken: string = req.body.token;
 
         if (!refreshToken) {
             res.sendStatus(401);
@@ -74,26 +73,20 @@ app.post("/api/customers/refresh", async (req, res) => {
         }
 
         // Check permission
-        const plainToken = JSON.parse(crypt.decrypt(refreshToken));
-        const userData: models.IUser = await mongo.getUserById(plainToken.id);
-        if (!userData.refresh.includes(plainToken.key)) {
+        const plainToken = JSON.parse(utils.decrypt(refreshToken));
+        const customer: models.ICustomer = await mongo.getCustomer(plainToken.email);
+        if (!customer.sessionTokens.includes(plainToken.key)) {
             res.sendStatus(401);
             return;
         }
 
-        // Generate token
-        const token: string = crypt.encrypt(JSON.stringify({
-            exp: (Date.now() + 1200000),
-            id: userData.id,
-            sec: secret
-        }));
+        // Craft response data
+        const token: string = utils.createUserToken(plainToken.email);
+        delete customer.password;
+        delete customer.sessionTokens;
         const response = {
-            token,
-            user: {
-                firstName: userData.firstName,
-                id: userData.id,
-                lastName: userData.lastName
-            }
+            customer,
+            token
         };
 
         res.status(200).send(response);
@@ -105,10 +98,10 @@ app.post("/api/customers/refresh", async (req, res) => {
     }
 });
 
-// verify token
+// checks if credentials are valid
 app.get("/api/customers/verify", async (req, res) => {
     try {
-        const success = verifyToken(req.get("token"));
+        const success = utils.verifyToken(req.get("token"));
         if (!success) {
             res.sendStatus(401);
             return;
@@ -122,40 +115,26 @@ app.get("/api/customers/verify", async (req, res) => {
     }
 });
 
-// Upload image
-app.post("/api/images/:domain", async (req, res) => {
+// Upload product image
+app.put("/api/products/:id/images", async (req, res) => {
     try {
-        const user = verifyToken(req.get("token"));
+        const user = utils.verifyToken(req.get("token"));
         if (!user) {
             res.sendStatus(401);
             return;
         }
-        const domain = req.params.domain;
+        const id = req.params.id;
         const image = req.files.image;
         const name: string = req.body.name;
-        const type: string = req.body.type;
-        const domainData: models.IDomain = await mongo.getDomain(domain);
+        const description: string = req.body.description;
+        const fileName: string = utils.generateId() + ".jpg";
 
-        // Check permissions
-        if (domainData.owner !== user) {
-            res.sendStatus(401);
-            return;
-        }
-
-        // Check if name exists or is already taken and if type is valid
-        if (!name ||
-            domainData.assets.findIndex((el: models.IAsset) => el.name === name && el.type === type) !== -1 ||
-            !allowedAssetTypes.includes(type)) {
-            res.sendStatus(400);
-            return;
-        }
-
-        // Save image to appropriate folder
+        // Save image
         const saved = await util.promisify((image as UploadedFile).mv)(
-            path.join(utils.buildPath, domain, "assets", name.replace(/\./g, "") + "." + type));
+            path.join(__dirname, "../", "/images", "/" + fileName));
 
         // Update database
-        const success = await mongo.addAsset(domain, { name, type });
+        const success = await mongo.addProductImage(id, fileName);
 
         res.sendStatus(200);
 
