@@ -1,7 +1,11 @@
+import fs from "fs";
 import * as hashJS from "hash.js";
+import path from "path";
 import * as crypt from "./crypt";
-const secret: string = "wo4Bd8FktL31Ekv8sTbcl33";
+
 const alphabet: string = "4fPwKEjkGrBJst2MpFVZx9y5lIm6A7LDinQzgOhqaWC3obXuv0H1cNde8Y";
+const config: any = JSON.parse(fs.readFileSync(path.join(__dirname, "../", "/config.json"), "utf-8"));
+const secret: string = config.secret;
 
 export function randomString(length: number): string {
     let result: string = "";
@@ -19,15 +23,26 @@ export function generateId(): string {
     return result + Date.now();
 }
 
-export function verifyToken(token: string): string {
+export function verifyUser(token: string): string {
     if (!token) {
         return "";
     }
     const plainToken = JSON.parse(crypt.decrypt(token));
-    if (plainToken.sec !== secret) {
+    if (plainToken.sec !== secret || plainToken.role !== "customer" || plainToken.exp < Date.now()) {
         return "";
     }
     return plainToken.email;
+}
+
+export function verifyAdmin(token: string): string {
+    if (!token) {
+        return "";
+    }
+    const plainToken = JSON.parse(crypt.decrypt(token));
+    if (plainToken.sec !== secret || plainToken.role !== "admin" || plainToken.exp < Date.now()) {
+        return "";
+    }
+    return plainToken.name;
 }
 
 export function hash(data: string): string {
@@ -39,6 +54,7 @@ export function createUserToken(email: string) {
     return crypt.encrypt(JSON.stringify({
         email,
         exp: (Date.now() + 1200000),
+        role: "customer",
         sec: secret
     }));
 }
@@ -48,6 +64,24 @@ export function createUserRefreshToken(email: string, key: string) {
         email,
         exp: (Date.now() + 604800000),
         key
+    }));
+}
+
+export function createAdminToken(name: string, access: string) {
+    return crypt.encrypt(JSON.stringify({
+        access,
+        exp: (Date.now() + 1200000),
+        name,
+        role: "admin",
+        sec: secret
+    }));
+}
+
+export function createAdminRefreshToken(name: string, key: string) {
+    return crypt.encrypt(JSON.stringify({
+        exp: (Date.now() + 604800000),
+        key,
+        name
     }));
 }
 

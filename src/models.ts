@@ -1,5 +1,5 @@
 export interface ICustomer {
-    __id: string;
+    _id: string;
     email: string;
     firstName: string;
     lastName: string;
@@ -23,7 +23,7 @@ export interface ICustomer {
 }
 
 export interface IAdmin {
-    __id: string;
+    _id: string;
     name: string;
     password: string;
     access: string;
@@ -31,20 +31,25 @@ export interface IAdmin {
 }
 
 export interface IProduct {
-    __id: string;
+    _id: string;
     name: string;
     description_short: string;
     description_long: string;
     amount: number;
     price: number;
+    delivery: any;
     images: string[];
     mainImage: string;
     categories: any;
 }
 
 export interface IPendingCustomer {
-    __id: string;
+    _id: string;
     email: string;
     token: string;
     date: number;
+}
+
+export interface IPurchase {
+    _id: string;
 }
