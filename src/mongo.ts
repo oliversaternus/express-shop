@@ -13,19 +13,22 @@ export async function prepare(): Promise<boolean> {
     }
 }
 
-function buildSearchConfig(categories: any): any {
+function buildSearchConfig(categories: models.ISearchCategories): any {
     let result: any = {};
     for (let key in categories) {
         if (categories.hasOwnProperty(key)) {
             switch (key) {
                 case 'tags':
+                    if (!categories.tags) { break; }
                     result.tags = { $in: categories.tags };
                     break;
                 case 'price':
+                    if (!categories.price) { break; }
                     result.price = { $gt: categories.price[0], $lt: categories.price[1] };
                     break;
                 case 'keyword':
-                    const regex = new RegExp(categories.keayword, 'i');
+                    if (!categories.keyword) { break; }
+                    const regex = new RegExp(categories.keyword, 'i');
                     result.$or = [{ name: regex }, { description_short: regex }];
                     break;
             }
@@ -239,9 +242,10 @@ export async function addProductImage(id: string, image: string): Promise<boolea
     }
 }
 
-export async function getProducts(catergories: any, page: number, pageSize: number): Promise<models.IProduct[]> {
+export async function getProducts(categories: models.ISearchCategories): Promise<models.IProduct[]> {
     try {
-        const searchConfig = buildSearchConfig(catergories);
+        const { page, pageSize } = categories;
+        const searchConfig = buildSearchConfig(categories);
         const res = await conn.db("express-shop").collection("products")
             .find(searchConfig).sort().skip(page * pageSize).limit(pageSize).toArray();
         return res as models.IProduct[];

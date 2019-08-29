@@ -40,7 +40,7 @@ export interface IProduct {
     delivery: any;
     images: string[];
     mainImage: string;
-    categories: any;
+    categories: ICategory;
 }
 
 export interface IPendingCustomer {
@@ -52,4 +52,16 @@ export interface IPendingCustomer {
 
 export interface IPurchase {
     _id: string;
+}
+
+export interface ICategory {
+    tags: string[];
+}
+
+export interface ISearchCategories {
+    tags: string[];
+    price: [number, number];
+    keyword: string;
+    page: number;
+    pageSize: number;
 }

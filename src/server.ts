@@ -218,9 +218,7 @@ app.put("/api/products/:id", async (req, res) => {
         }
 
         const product: models.IProduct = req.body as models.IProduct;
-        console.log(product);
         const updated = await mongo.updateProduct(product);
-        console.log(updated);
 
         if (!updated) {
             res.sendStatus(400);
@@ -243,14 +241,9 @@ app.delete("/api/products/:id", async (req, res) => {
             res.sendStatus(401);
             return;
         }
-        const id = req.params.id;
-        const success = await mongo.deleteProduct(id);
-
-        if (!success) {
-            res.sendStatus(500);
-            return;
-        }
-        res.sendStatus(200);
+        const id: string = req.params.id;
+        const success: boolean = await mongo.deleteProduct(id);
+        res.sendStatus(success ? 200 : 500);
     } catch (e) {
         console.log(e);
         res.sendStatus(500);
@@ -258,15 +251,17 @@ app.delete("/api/products/:id", async (req, res) => {
 });
 
 // Get all products paged and filtered by categories
-app.get("/api/products", async (req, res) => {
-    try {
-        const products: any = await mongo.getProducts({}, 0, 100);
-        res.status(200).send(products);
-    } catch (e) {
-        console.log(e);
-        res.sendStatus(500);
-    }
-});
+app.post("/api/products",
+    async (req, res) => {
+        try {
+            const searchCategories: models.ISearchCategories = req.body as models.ISearchCategories;
+            const products: models.IProduct[] = await mongo.getProducts(searchCategories);
+            res.status(200).send(products);
+        } catch (e) {
+            console.log(e);
+            res.sendStatus(500);
+        }
+    });
 
 /*
 *
