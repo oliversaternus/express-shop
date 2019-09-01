@@ -239,40 +239,17 @@ app.get("/api/customers/verify", async (req, res) => {
 });
 
 // customer update
-app.put("/api/customers", async (req, res) => {
-    const email: string = req.body.email;
-    const password: string = req.body.password;
-    const customer: models.ICustomer = await mongo.getCustomer(email);
+app.put("/api/customers",
+    auth.loginCustomer,
+    async (req, res) => {
+        const customer = res.locals.customer;
+        const updated: models.ICustomer = {
+            ...customer, ...req.body, id: customer._id
+        };
 
-    // check permission
-    if (utils.hash(password) !== customer.password) {
-        res.sendStatus(401);
-        return;
-    }
-
-    const updated: models.ICustomer = {
-        _id: customer._id,
-        cart: customer.cart,
-        city: req.body.city ? req.body.city : customer.city,
-        country: req.body.country ? req.body.country : customer.country,
-        email,
-        firstName: req.body.firstName ? req.body.firstName : customer.firstName,
-        houseNumber: req.body.houseNumber ? req.body.houseNumber : customer.houseNumber,
-        lastName: req.body.lastName ? req.body.lastName : customer.lastName,
-        password: req.body.newPW ? utils.hash(req.body.newPW) : customer.password,
-        postalCode: req.body.postalCode ? req.body.postalCode : customer.postalCode,
-        purchased: [],
-        sessionTokens: [],
-        street: req.body.street ? req.body.street : customer.street
-    };
-
-    const success = await mongo.updateCustomer(updated);
-    if (!success) {
-        res.sendStatus(500);
-        return;
-    }
-    res.sendStatus(200);
-});
+        const success = await mongo.updateCustomer(updated);
+        res.sendStatus(success ? 200 : 500);
+    });
 
 app.use((err: any, req: any, res: any, next: any) => {
     res.status(Number(err.message) || 500);
