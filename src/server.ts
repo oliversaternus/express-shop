@@ -138,7 +138,7 @@ app.delete("/api/products/:id",
         res.sendStatus(deleted ? 200 : 500);
     });
 
-// Get all products paged and filtered by categories
+// Get all products paged, sorted and filtered by categories
 app.post("/api/products",
     async (req, res) => {
         const searchCategories: models.ISearchCategories = req.body as models.ISearchCategories;
@@ -248,6 +248,37 @@ app.put("/api/customers",
         };
 
         const success = await mongo.updateCustomer(updated);
+        res.sendStatus(success ? 200 : 500);
+    });
+
+// add to cart
+app.put("/api/customers/cart",
+    auth.verifyCustomer,
+    async (req, res) => {
+        const customer = res.locals.customer;
+        const product = req.body as models.IProduct;
+
+        const success = await mongo.addToCart(customer._id, product);
+        res.sendStatus(success ? 200 : 500);
+    });
+
+// remove from cart
+app.delete("/api/customers/cart/:cartId",
+    auth.verifyCustomer,
+    async (req, res) => {
+        const { customer } = res.locals;
+        const { cartId } = req.params;
+
+        const success = await mongo.removeFromCart(customer._id, cartId);
+        res.sendStatus(success ? 200 : 500);
+    });
+
+// purchase cart
+app.put("/api/customers/purchase",
+    auth.verifyCustomer,
+    async (req, res) => {
+        const customer = res.locals.customer;
+        const success = await mongo.purchase(customer._id);
         res.sendStatus(success ? 200 : 500);
     });
 

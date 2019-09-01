@@ -65,3 +65,9 @@ export interface ISearchCategories {
     page: number;
     pageSize: number;
 }
+
+export interface ICartItem {
+    _id: string;
+    name: string;
+    price: number;
+}
