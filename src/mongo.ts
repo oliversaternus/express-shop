@@ -14,21 +14,21 @@ export async function prepare(): Promise<boolean> {
 }
 
 function buildSearchConfig(categories: models.ISearchCategories): any {
-    let result: any = {};
-    for (let key in categories) {
+    const result: any = {};
+    for (const key in categories) {
         if (categories.hasOwnProperty(key)) {
             switch (key) {
-                case 'tags':
+                case "tags":
                     if (!categories.tags) { break; }
                     result.tags = { $in: categories.tags };
                     break;
-                case 'price':
+                case "price":
                     if (!categories.price) { break; }
                     result.price = { $gt: categories.price[0], $lt: categories.price[1] };
                     break;
-                case 'keyword':
+                case "keyword":
                     if (!categories.keyword) { break; }
-                    const regex = new RegExp(categories.keyword, 'i');
+                    const regex = new RegExp(categories.keyword, "i");
                     result.$or = [{ name: regex }, { description_short: regex }];
                     break;
             }
@@ -193,77 +193,48 @@ export async function purchase(id: string) {
 */
 
 export async function createProduct(product: models.IProduct): Promise<boolean> {
-    try {
-        const res = await conn.db("express-shop").collection("products")
-            .insertOne(product);
-        return res.ops[0];
-
-    } catch (e) {
-        return false;
-    }
+    const res = await conn.db("express-shop").collection("products")
+        .insertOne(product);
+    return res.ops[0];
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("products")
-            .deleteOne({ _id });
-        return !!res.deletedCount;
-
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("products")
+        .deleteOne({ _id });
+    return !!res.deletedCount;
 }
 
 export async function updateProduct(product: models.IProduct): Promise<boolean> {
-    try {
-        const updateParams = { ...product };
-        const _id = new ObjectID(product._id);
-        delete updateParams._id;
-        const res = await conn.db("express-shop").collection("products")
-            .updateOne({ _id }, { $set: { ...updateParams } });
-        return !!res.result.nModified;
-
-    } catch (e) {
-        console.log(e);
-        return false;
-    }
+    const updateParams = { ...product };
+    const _id = new ObjectID(product._id);
+    delete updateParams._id;
+    const res = await conn.db("express-shop").collection("products")
+        .updateOne({ _id }, { $set: { ...updateParams } });
+    return !!res.result.nModified;
 }
 
 export async function addProductImage(id: string, image: string): Promise<boolean> {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("products")
-            .updateOne({ _id }, { $push: { images: image } });
-        return !!res.result.nModified;
-
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("products")
+        .updateOne({ _id }, { $push: { images: image } });
+    return !!res.result.nModified;
 }
 
 export async function getProducts(categories: models.ISearchCategories): Promise<models.IProduct[]> {
-    try {
-        const { page, pageSize } = categories;
-        const searchConfig = buildSearchConfig(categories);
-        const res = await conn.db("express-shop").collection("products")
-            .find(searchConfig).sort().skip(page * pageSize).limit(pageSize).toArray();
-        return res as models.IProduct[];
-    } catch (e) {
-        return null;
-    }
+    const page = categories.page || 0;
+    const pageSize = categories.pageSize || 1000;
+    const searchConfig = buildSearchConfig(categories);
+    const res = await conn.db("express-shop").collection("products")
+        .find(searchConfig).sort().skip(page * pageSize).limit(pageSize).toArray();
+    return res as models.IProduct[];
 }
 
 export async function getProduct(id: string): Promise<models.IProduct> {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("products")
-            .findOne({ _id });
-        return res as models.IProduct;
-
-    } catch (e) {
-        return null;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("products")
+        .findOne({ _id });
+    return res as models.IProduct;
 }
 
 /*
