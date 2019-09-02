@@ -2,6 +2,8 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import express from "express";
 import fileUpload, { UploadedFile } from "express-fileupload";
+import { unlink } from "fs";
+import { createServer } from "http";
 import path from "path";
 import util from "util";
 import * as auth from "./auth";
@@ -15,8 +17,22 @@ app.use(bodyParser.json());
 app.use(fileUpload());
 app.use(cors());
 
+/*
+*
+*
+*
+************************************ FRONTEND **************************************
+*
+*
+*
+*/
+
 app.get("/", (req, res) => {
-    res.send("Hello world!");
+    res.send("Hello Customer!");
+});
+
+app.get("/wemusync-admin", (req, res) => {
+    res.send("Hello Admin!");
 });
 
 /*
@@ -89,11 +105,8 @@ app.put("/api/admins",
     async (req, res) => {
         const admin = res.locals.admin;
         const updated: models.IAdmin = {
-            _id: admin._id,
-            access: admin.access,
-            name,
-            password: req.body.newPW ? utils.hash(req.body.newPW) : admin.password,
-            sessionTokens: []
+            ...admin,
+            password: req.body.newPW ? utils.hash(req.body.newPW) : admin.password
         };
 
         const success = await mongo.updateAdmin(updated);
@@ -158,9 +171,23 @@ app.post("/api/products/:id/images",
         const saved = await util.promisify((image as UploadedFile).mv)(
             path.join(__dirname, "../", "/images", "/" + fileName));
 
-        // Update database
+        // update database
         const success = await mongo.addProductImage(id, fileName);
 
+        res.sendStatus(200);
+    });
+
+// Remove product image
+app.delete("/api/products/:id/:fileName",
+    auth.verifyAdmin,
+    async (req, res) => {
+        const { id, fileName } = req.params;
+
+        // delete image
+        await util.promisify(unlink)(path.join(__dirname, "../", "/images", "/" + fileName));
+
+        // update database
+        const success = await mongo.removeProductImage(id, fileName);
         res.sendStatus(200);
     });
 
@@ -182,8 +209,9 @@ app.post("/api/customers/login",
 
         // Generate tokens
         const key: string = utils.randomString(32);
-        const refreshToken: string = utils.createUserRefreshToken(customer.email, key);
-        const token: string = utils.createUserToken(customer.email);
+        const refreshToken: string =
+            utils.createUserRefreshToken(customer.email, key, customer.firstName, customer.lastName);
+        const token: string = utils.createUserToken(customer.email, customer.firstName, customer.lastName);
 
         // Craft response data
         delete customer.password;
@@ -217,7 +245,7 @@ app.post("/api/customers/refresh", async (req, res) => {
     }
 
     // Craft response data
-    const token: string = utils.createUserToken(plainToken.email);
+    const token: string = utils.createUserToken(plainToken.email, plainToken.firstName, plainToken.lastName);
     delete customer.password;
     delete customer.sessionTokens;
     const response = {
@@ -287,8 +315,9 @@ app.use((err: any, req: any, res: any, next: any) => {
     res.send();
 });
 
+const server = createServer(app);
 mongo.prepare().then(async () => {
-    app.listen(8080, () => {
+    server.listen(8080, () => {
         console.log(`server started at http://localhost:8080`);
     });
 });

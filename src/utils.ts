@@ -50,20 +50,24 @@ export function hash(data: string): string {
     return result;
 }
 
-export function createUserToken(email: string) {
+export function createUserToken(email: string, firstName: string, lastName: string) {
     return crypt.encrypt(JSON.stringify({
         email,
         exp: (Date.now() + 1200000),
+        firstName,
+        lastName,
         role: "customer",
         sec: secret
     }));
 }
 
-export function createUserRefreshToken(email: string, key: string) {
+export function createUserRefreshToken(email: string, key: string, firstName: string, lastName: string) {
     return crypt.encrypt(JSON.stringify({
         email,
         exp: (Date.now() + 604800000),
-        key
+        firstName,
+        key,
+        lastName
     }));
 }
 
@@ -85,6 +89,11 @@ export function createAdminRefreshToken(name: string, key: string) {
     }));
 }
 
-export function decrypt(text: string): any {
-    return JSON.parse(crypt.decrypt(text));
+export function decrypt(token: string): any {
+    return JSON.parse(crypt.decrypt(token));
+}
+
+export function decryptSafe(token: string): any {
+    const result = JSON.parse(crypt.decrypt(token));
+    return result.sec === secret ? result : undefined;
 }

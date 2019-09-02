@@ -62,6 +62,9 @@ export interface ISearchCategories {
     tags: string[];
     price: [number, number];
     keyword: string;
+    sort: {
+        [key: string]: number;
+    };
     page: number;
     pageSize: number;
 }
@@ -70,4 +73,15 @@ export interface ICartItem {
     _id: string;
     name: string;
     price: number;
+}
+
+export interface IConnection {
+    _id: string;
+    customer: {
+        email: string;
+        firstName: string;
+        lastName: string;
+    };
+    path: string;
+    subscribed: string;
 }

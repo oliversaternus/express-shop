@@ -48,26 +48,16 @@ function buildSearchConfig(categories: models.ISearchCategories): any {
 */
 
 export async function createCustomer(customer: models.ICustomer): Promise<boolean> {
-    try {
-        const res = await conn.db("express-shop").collection("customers")
-            .insertOne(customer);
-        return res.ops[0];
-
-    } catch (e) {
-        return false;
-    }
+    const res = await conn.db("express-shop").collection("customers")
+        .insertOne(customer);
+    return res.ops[0];
 }
 
 export async function deleteCustomer(id: string): Promise<boolean> {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("customers")
-            .deleteOne({ _id });
-        return !!res.deletedCount;
-
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("customers")
+        .deleteOne({ _id });
+    return !!res.deletedCount;
 }
 
 export async function updateCustomer(customer: models.ICustomer): Promise<boolean> {
@@ -75,111 +65,71 @@ export async function updateCustomer(customer: models.ICustomer): Promise<boolea
     const updateParams = { ...customer };
     delete updateParams.sessionTokens;
     delete updateParams.purchased;
-    try {
-        const res = await conn.db("express-shop").collection("customers")
-            .updateOne({ _id }, { $set: { ...updateParams } });
-        return !!res.result.nModified;
-
-    } catch (e) {
-        return false;
-    }
+    const res = await conn.db("express-shop").collection("customers")
+        .updateOne({ _id }, { $set: { ...updateParams } });
+    return !!res.result.nModified;
 }
 
 export async function logoutCustomer(id: string): Promise<boolean> {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("customers")
-            .updateOne({ _id }, { sessionTokens: [] });
-        return !!res.result.nModified;
-
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("customers")
+        .updateOne({ _id }, { sessionTokens: [] });
+    return !!res.result.nModified;
 }
 
 export async function addCustomerSessionToken(id: string, token: string): Promise<boolean> {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("customers")
-            .updateOne({ _id }, { $push: { sessionTokens: token } });
-        return !!res.result.nModified;
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("customers")
+        .updateOne({ _id }, { $push: { sessionTokens: token } });
+    return !!res.result.nModified;
 }
 
 export async function removeCustomerSessionToken(id: string, token: string): Promise<boolean> {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("customers")
-            .updateOne({ _id }, { $pull: { sessionTokens: token } });
-        return !!res.result.nModified;
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("customers")
+        .updateOne({ _id }, { $pull: { sessionTokens: token } });
+    return !!res.result.nModified;
 }
 
 export async function getCustomers(): Promise<models.ICustomer[]> {
-    try {
-        const res = await conn.db("express-shop").collection("customers")
-            .find({}, { projection: { password: 0, sessionTokens: 0, cart: 0, purchased: 0 } }).toArray();
-        return res as models.ICustomer[];
-
-    } catch (e) {
-        return null;
-    }
+    const res = await conn.db("express-shop").collection("customers")
+        .find({}, { projection: { password: 0, sessionTokens: 0, cart: 0, purchased: 0 } }).toArray();
+    return res as models.ICustomer[];
 }
 
 export async function getCustomer(email: string): Promise<models.ICustomer> {
-    try {
-        const res = await conn.db("express-shop").collection("customers")
-            .findOne({ email }, { projection: { password: 0 } });
-        return res as models.ICustomer;
-
-    } catch (e) {
-        return null;
-    }
+    const res = await conn.db("express-shop").collection("customers")
+        .findOne({ email }, { projection: { password: 0 } });
+    return res as models.ICustomer;
 }
 
 export async function addToCart(id: string, product: models.IProduct) {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("customers")
-            .updateOne({ _id }, { $push: { cart: product } });
-        return !!res.result.nModified;
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("customers")
+        .updateOne({ _id }, { $push: { cart: product } });
+    return !!res.result.nModified;
 }
 
 export async function removeFromCart(id: string, cartId: string) {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("customers")
-            .updateOne({ _id }, { $pull: { cart: { cartId } } });
-        return !!res.result.nModified;
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("customers")
+        .updateOne({ _id }, { $pull: { cart: { cartId } } });
+    return !!res.result.nModified;
 }
 
 export async function purchase(id: string) {
-    try {
-        const _id = new ObjectID(id);
-        const items = (await conn.db("express-shop").collection("customers")
-            .findOne({ _id }, { projection: { cart: 1 } })).cart.map((item: any) => {
-                return {
-                    date: Date.now(),
-                    product: item.product,
-                    purchaseId: item.cartId + Date.now()
-                };
-            });
-        const res = await conn.db("express-shop").collection("customers")
-            .updateOne({ _id }, { $push: { purchased: { $each: items } }, cart: [] });
-        return !!res.result.nModified;
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const items = (await conn.db("express-shop").collection("customers")
+        .findOne({ _id }, { projection: { cart: 1 } })).cart.map((item: any) => {
+            return {
+                date: Date.now(),
+                product: item.product,
+                purchaseId: item.cartId + Date.now()
+            };
+        });
+    const res = await conn.db("express-shop").collection("customers")
+        .updateOne({ _id }, { $push: { purchased: { $each: items } }, cart: [] });
+    return !!res.result.nModified;
 }
 
 /*
@@ -221,12 +171,19 @@ export async function addProductImage(id: string, image: string): Promise<boolea
     return !!res.result.nModified;
 }
 
+export async function removeProductImage(id: string, image: string): Promise<boolean> {
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("products")
+        .updateOne({ _id }, { $pull: { images: image } });
+    return !!res.result.nModified;
+}
+
 export async function getProducts(categories: models.ISearchCategories): Promise<models.IProduct[]> {
     const page = categories.page || 0;
     const pageSize = categories.pageSize || 1000;
     const searchConfig = buildSearchConfig(categories);
     const res = await conn.db("express-shop").collection("products")
-        .find(searchConfig).sort().skip(page * pageSize).limit(pageSize).toArray();
+        .find(searchConfig).sort(categories.sort).skip(page * pageSize).limit(pageSize).toArray();
     return res as models.IProduct[];
 }
 
@@ -248,85 +205,51 @@ export async function getProduct(id: string): Promise<models.IProduct> {
 */
 
 export async function createAdmin(admin: models.IAdmin): Promise<boolean> {
-    try {
-        const res = await conn.db("express-shop").collection("admins")
-            .insertOne(admin);
-        return res.ops[0];
-
-    } catch (e) {
-        return false;
-    }
+    const res = await conn.db("express-shop").collection("admins")
+        .insertOne(admin);
+    return res.ops[0];
 }
 
 export async function deleteAdmin(id: string): Promise<boolean> {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("admins")
-            .deleteOne({ _id });
-        return !!res.deletedCount;
-
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("admins")
+        .deleteOne({ _id });
+    return !!res.deletedCount;
 }
 
 export async function updateAdmin(admin: models.IAdmin): Promise<boolean> {
-    try {
-        const updateParams = { ...admin };
-        delete updateParams.sessionTokens;
-        const _id = new ObjectID(admin._id);
-        const res = await conn.db("express-shop").collection("admins")
-            .updateOne({ _id }, { $set: { ...updateParams } });
-        return !!res.result.nModified;
-
-    } catch (e) {
-        console.log(e);
-        return false;
-    }
+    const updateParams = { ...admin };
+    delete updateParams.sessionTokens;
+    const _id = new ObjectID(admin._id);
+    const res = await conn.db("express-shop").collection("admins")
+        .updateOne({ _id }, { $set: { ...updateParams } });
+    return !!res.result.nModified;
 }
 
 export async function getAdmins(): Promise<models.IAdmin[]> {
-    try {
-        const res = await conn.db("express-shop").collection("admins")
-            .find({}).toArray();
-        return res as models.IAdmin[];
-
-    } catch (e) {
-        return null;
-    }
+    const res = await conn.db("express-shop").collection("admins")
+        .find({}).toArray();
+    return res as models.IAdmin[];
 }
 
 export async function getAdmin(name: string): Promise<models.IAdmin> {
-    try {
-        const res = await conn.db("express-shop").collection("admins")
-            .findOne({ name });
-        return res as models.IAdmin;
-
-    } catch (e) {
-        return null;
-    }
+    const res = await conn.db("express-shop").collection("admins")
+        .findOne({ name });
+    return res as models.IAdmin;
 }
 
 export async function addAdminSessionToken(id: string, token: string): Promise<boolean> {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("admins")
-            .updateOne({ _id }, { $push: { sessionTokens: token } });
-        return !!res.result.nModified;
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("admins")
+        .updateOne({ _id }, { $push: { sessionTokens: token } });
+    return !!res.result.nModified;
 }
 
 export async function removeAdminSessionToken(id: string, token: string): Promise<boolean> {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("admins")
-            .updateOne({ _id }, { $pull: { sessionTokens: token } });
-        return !!res.result.nModified;
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("admins")
+        .updateOne({ _id }, { $pull: { sessionTokens: token } });
+    return !!res.result.nModified;
 }
 
 /*
@@ -340,47 +263,52 @@ export async function removeAdminSessionToken(id: string, token: string): Promis
 */
 
 export async function createPendingCustomer(customer: models.IPendingCustomer): Promise<boolean> {
-    try {
-        const res = await conn.db("express-shop").collection("pending_customers")
-            .insertOne(customer);
-        return res.ops[0];
-
-    } catch (e) {
-        return false;
-    }
+    const res = await conn.db("express-shop").collection("pending_customers")
+        .insertOne(customer);
+    return res.ops[0];
 }
 
 export async function deletePendingCustomer(id: string): Promise<boolean> {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("pending_customers")
-            .deleteOne({ _id });
-        return !!res.deletedCount;
-
-    } catch (e) {
-        return false;
-    }
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("pending_customers")
+        .deleteOne({ _id });
+    return !!res.deletedCount;
 }
 
 export async function getPendingCustomers(): Promise<models.IPendingCustomer[]> {
-    try {
-        const res = await conn.db("express-shop").collection("pending_customers")
-            .find({}).toArray();
-        return res as models.IPendingCustomer[];
-
-    } catch (e) {
-        return null;
-    }
+    const res = await conn.db("express-shop").collection("pending_customers")
+        .find({}).toArray();
+    return res as models.IPendingCustomer[];
 }
 
 export async function getPendingCustomer(id: string): Promise<models.IPendingCustomer> {
-    try {
-        const _id = new ObjectID(id);
-        const res = await conn.db("express-shop").collection("pending_customers")
-            .findOne({ _id });
-        return res as models.IPendingCustomer;
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("pending_customers")
+        .findOne({ _id });
+    return res as models.IPendingCustomer;
+}
 
-    } catch (e) {
-        return null;
-    }
+/*
+*
+*
+*
+************************************ CONNECTIONS **************************************
+*
+*
+*
+*/
+
+export async function createConnection(connection: models.IConnection): Promise<boolean> {
+    const res = await conn.db("express-shop").collection("connections")
+        .insertOne(connection);
+    return res.ops[0];
+}
+
+export async function updateConnection(connection: models.IConnection): Promise<boolean> {
+    const updateParams = { ...connection };
+    const _id = new ObjectID(connection._id);
+    delete updateParams._id;
+    const res = await conn.db("express-shop").collection("products")
+        .updateOne({ _id }, { $set: { ...updateParams } });
+    return !!res.result.nModified;
 }
