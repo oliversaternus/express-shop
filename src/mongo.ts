@@ -3,6 +3,7 @@ import * as models from "./models";
 
 const url: string = "mongodb://127.0.0.1:27017/";
 let conn: any;
+let onProductUpdate = (arg: any): any => undefined;
 
 export async function prepare(): Promise<boolean> {
     try {
@@ -11,6 +12,10 @@ export async function prepare(): Promise<boolean> {
     } catch (e) {
         return false;
     }
+}
+
+export function setOnProductUpdate(callback: (arg: any) => void) {
+    onProductUpdate = callback;
 }
 
 function buildSearchConfig(categories: models.ISearchCategories): any {
@@ -160,8 +165,9 @@ export async function updateProduct(product: models.IProduct): Promise<boolean> 
     const _id = new ObjectID(product._id);
     delete updateParams._id;
     const res = await conn.db("express-shop").collection("products")
-        .updateOne({ _id }, { $set: { ...updateParams } });
-    return !!res.result.nModified;
+        .findOneAndUpdate({ _id }, { $set: { ...updateParams } }, { returnOriginal: false });
+    onProductUpdate(res.value);
+    return res;
 }
 
 export async function addProductImage(id: string, image: string): Promise<boolean> {
@@ -308,7 +314,15 @@ export async function updateConnection(connection: models.IConnection): Promise<
     const updateParams = { ...connection };
     const _id = new ObjectID(connection._id);
     delete updateParams._id;
-    const res = await conn.db("express-shop").collection("products")
+    delete updateParams.ip;
+    const res = await conn.db("express-shop").collection("connections")
         .updateOne({ _id }, { $set: { ...updateParams } });
     return !!res.result.nModified;
+}
+
+export async function deleteConnection(id: string): Promise<boolean> {
+    const _id = new ObjectID(id);
+    const res = await conn.db("express-shop").collection("connections")
+        .deleteOne({ _id });
+    return !!res.deletedCount;
 }

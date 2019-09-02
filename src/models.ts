@@ -77,11 +77,10 @@ export interface ICartItem {
 
 export interface IConnection {
     _id: string;
+    ip: string;
     customer: {
         email: string;
         firstName: string;
         lastName: string;
     };
-    path: string;
-    subscribed: string;
 }

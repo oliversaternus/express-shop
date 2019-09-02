@@ -6,19 +6,14 @@ import * as models from "./models";
 import * as mongo from "./mongo";
 import * as utils from "./utils";
 
-function subscribeCustomer(path: string): string {
-    if (path.startsWith("/products/")) {
-        const productId = path.split("/")[2];
-        return productId || null;
-    }
-    return null;
-}
-
 const app: express.Application = express();
 app.use(cors());
-
 const server = createServer(app);
 const io = IO(server);
+
+function onProductUpdated(product: models.IProduct) {
+    io.emit("update", product);
+}
 
 io.use((socket, next) => {
     if (socket.handshake.query.url) {
@@ -26,8 +21,7 @@ io.use((socket, next) => {
         const connection: models.IConnection = {
             _id: id,
             customer: null,
-            path: socket.handshake.query.url,
-            subscribed: subscribeCustomer(socket.handshake.query.url)
+            ip: socket.handshake.address
         };
         mongo.createConnection(connection);
         return next();
@@ -37,7 +31,7 @@ io.use((socket, next) => {
 
 io.on("connection", async (socket) => {
     const id = socket.client.id;
-    socket.on("authenticated", async (token) => {
+    socket.on("authenticated", (token) => {
         const user = utils.decryptSafe(token);
         const updated: models.IConnection = {
             _id: id,
@@ -46,24 +40,16 @@ io.on("connection", async (socket) => {
                 firstName: user.firstName,
                 lastName: user.lastName
             },
-            path: null,
-            subscribed: null
+            ip: null
         };
-        delete updated.path;
         mongo.updateConnection(updated);
     });
-    socket.on("routing", async (path) => {
-        const updated: models.IConnection = {
-            _id: id,
-            customer: null,
-            path,
-            subscribed: subscribeCustomer(path)
-        };
-        delete updated.customer;
-        mongo.updateConnection(updated);
+    socket.on("disconnect", () => {
+        mongo.deleteConnection(socket.client.id);
     });
 });
 
+mongo.setOnProductUpdate(onProductUpdated);
 mongo.prepare().then(async () => {
     server.listen(8081, () => {
         console.log(`server started at http://localhost:8081`);
