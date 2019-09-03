@@ -1,11 +1,13 @@
 import fs from "fs";
 import * as hashJS from "hash.js";
+import http from "http";
 import path from "path";
 import * as crypt from "./crypt";
 
 const alphabet: string = "4fPwKEjkGrBJst2MpFVZx9y5lIm6A7LDinQzgOhqaWC3obXuv0H1cNde8Y";
 const config: any = JSON.parse(fs.readFileSync(path.join(__dirname, "../", "/config.json"), "utf-8"));
 const secret: string = config.secret;
+const wsKey: string = config.wsKey;
 
 export function randomString(length: number): string {
     let result: string = "";
@@ -96,4 +98,19 @@ export function decrypt(token: string): any {
 export function decryptSafe(token: string): any {
     const result = JSON.parse(crypt.decrypt(token));
     return result.sec === secret ? result : undefined;
+}
+
+export function triggerUpdateHook(product: any) {
+    const req = http.request({
+        headers: {
+            "Content-Type": "application/json",
+            "key": wsKey
+        },
+        host: "127.0.0.1",
+        method: "POST",
+        path: "/update",
+        port: "4143"
+    });
+    req.write(JSON.stringify(product));
+    req.end();
 }

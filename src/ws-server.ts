@@ -1,17 +1,26 @@
 import bodyParser from "body-parser";
 import cors from "cors";
 import express from "express";
+import fs from "fs";
 import { createServer } from "http";
+import path from "path";
 import IO from "socket.io";
 import * as models from "./models";
 import * as mongo from "./mongo";
 import * as utils from "./utils";
 
+const config: any = JSON.parse(fs.readFileSync(path.join(__dirname, "../", "/config.json"), "utf-8"));
+const wsKey = config.wsKey;
 const app: express.Application = express();
 app.use(bodyParser.json());
 app.use(cors());
 
 app.post("/update", (req, res) => {
+    const key = req.get("key");
+    if(key !== wsKey){
+        res.sendStatus(401);
+        return;
+    }
     const product = req.body;
     io.emit("update", product);
     res.sendStatus(200);

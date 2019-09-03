@@ -1,4 +1,4 @@
-import http from "http";
+import { triggerUpdateHook } from "./utils";
 import { MongoClient, ObjectID } from "mongodb";
 import * as models from "./models";
 
@@ -12,20 +12,6 @@ export async function prepare(): Promise<boolean> {
     } catch (e) {
         return false;
     }
-}
-
-function triggerUpdateHook(product: models.IProduct) {
-    const req = http.request({
-        headers: {
-            "Content-Type": "application/json"
-        },
-        host: "127.0.0.1",
-        method: "POST",
-        path: "/update",
-        port: "4143"
-    });
-    req.write(JSON.stringify(product));
-    req.end();
 }
 
 function buildSearchConfig(categories: models.ISearchCategories): any {

@@ -17,6 +17,7 @@ function randomString(length) {
 let config = {
     secret: randomString(24),
     encryptionKey: randomString(32),
+    wsKey: randomString(24),
     superAdmin: {
         _id: null,
         name: 'superUser',
