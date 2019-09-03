@@ -1,6 +1,6 @@
-import { triggerUpdateHook } from "./utils";
 import { MongoClient, ObjectID } from "mongodb";
-import * as models from "./models";
+import * as models from "../models/models";
+import { triggerUpdateHook } from "./utils";
 
 const url: string = "mongodb://127.0.0.1:27017/";
 let conn: any;

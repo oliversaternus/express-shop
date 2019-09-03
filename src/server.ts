@@ -6,10 +6,10 @@ import { unlink } from "fs";
 import { createServer } from "http";
 import path from "path";
 import util from "util";
-import * as auth from "./auth";
-import * as models from "./models";
-import * as mongo from "./mongo";
-import * as utils from "./utils";
+import * as models from "./models/models";
+import * as auth from "./tools/auth";
+import * as mongo from "./tools/mongo";
+import * as utils from "./tools/utils";
 
 const app: express.Application = express();
 app.use(bodyParser.urlencoded({ extended: true }));

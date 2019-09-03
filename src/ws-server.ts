@@ -5,9 +5,9 @@ import fs from "fs";
 import { createServer } from "http";
 import path from "path";
 import IO from "socket.io";
-import * as models from "./models";
-import * as mongo from "./mongo";
-import * as utils from "./utils";
+import * as models from "./models/models";
+import * as mongo from "./tools/mongo";
+import * as utils from "./tools/utils";
 
 const config: any = JSON.parse(fs.readFileSync(path.join(__dirname, "../", "/config.json"), "utf-8"));
 const wsKey = config.wsKey;
@@ -17,7 +17,7 @@ app.use(cors());
 
 app.post("/update", (req, res) => {
     const key = req.get("key");
-    if(key !== wsKey){
+    if (key !== wsKey) {
         res.sendStatus(401);
         return;
     }
