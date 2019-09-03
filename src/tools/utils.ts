@@ -5,9 +5,9 @@ import path from "path";
 import * as crypt from "./crypt";
 
 const alphabet: string = "4fPwKEjkGrBJst2MpFVZx9y5lIm6A7LDinQzgOhqaWC3obXuv0H1cNde8Y";
-const config: any = JSON.parse(fs.readFileSync(path.join(__dirname, "../", "/config.json"), "utf-8"));
+const config: any = JSON.parse(fs.readFileSync(path.join(__dirname, "../", "../", "/config.json"), "utf-8"));
 const secret: string = config.secret;
-const wsKey: string = config.wsKey;
+export const wsKey: string = config.wsKey;
 
 export function randomString(length: number): string {
     let result: string = "";
