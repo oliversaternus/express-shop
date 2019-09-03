@@ -1,9 +1,9 @@
+import http from "http";
 import { MongoClient, ObjectID } from "mongodb";
 import * as models from "./models";
 
 const url: string = "mongodb://127.0.0.1:27017/";
 let conn: any;
-let onProductUpdate = (arg: any): any => undefined;
 
 export async function prepare(): Promise<boolean> {
     try {
@@ -14,8 +14,18 @@ export async function prepare(): Promise<boolean> {
     }
 }
 
-export function setOnProductUpdate(callback: (arg: any) => void) {
-    onProductUpdate = callback;
+function triggerUpdateHook(product: models.IProduct) {
+    const req = http.request({
+        headers: {
+            "Content-Type": "application/json"
+        },
+        host: "127.0.0.1",
+        method: "POST",
+        path: "/update",
+        port: "4143"
+    });
+    req.write(JSON.stringify(product));
+    req.end();
 }
 
 function buildSearchConfig(categories: models.ISearchCategories): any {
@@ -166,7 +176,7 @@ export async function updateProduct(product: models.IProduct): Promise<boolean> 
     delete updateParams._id;
     const res = await conn.db("express-shop").collection("products")
         .findOneAndUpdate({ _id }, { $set: { ...updateParams } }, { returnOriginal: false });
-    onProductUpdate(res.value);
+    triggerUpdateHook(res.value);
     return res;
 }
 

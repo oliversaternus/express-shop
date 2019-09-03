@@ -1,3 +1,4 @@
+import bodyParser from "body-parser";
 import cors from "cors";
 import express from "express";
 import { createServer } from "http";
@@ -7,13 +8,17 @@ import * as mongo from "./mongo";
 import * as utils from "./utils";
 
 const app: express.Application = express();
+app.use(bodyParser.json());
 app.use(cors());
+
+app.post("/update", (req, res) => {
+    const product = req.body;
+    io.emit("update", product);
+    res.sendStatus(200);
+});
+
 const server = createServer(app);
 const io = IO(server);
-
-function onProductUpdated(product: models.IProduct) {
-    io.emit("update", product);
-}
 
 io.use((socket, next) => {
     if (socket.handshake.query.url) {
@@ -49,9 +54,8 @@ io.on("connection", async (socket) => {
     });
 });
 
-mongo.setOnProductUpdate(onProductUpdated);
 mongo.prepare().then(async () => {
-    server.listen(8081, () => {
-        console.log(`server started at http://localhost:8081`);
+    server.listen(4143, () => {
+        console.log(`server started at http://localhost:4143`);
     });
 });
